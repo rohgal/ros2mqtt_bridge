@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import time
 import rospy
 import json
@@ -33,79 +34,80 @@ class RosMqttBridge:
 
     def on_connect(self, client, userdata, flags, rc):
         rospy.loginfo("[ROS-MQTT Bridge] Connected to MQTT broker!!")
-        self.mqtt_client.subscribe(f"/{self._rid}/JobScheduler/result/response")
-        self.mqtt_client.subscribe(f"/{self._rid}/JobScheduler/goal/request")    
-        self.mqtt_client.subscribe(f"/{self._rid}/JobScheduler/cancel/request")
-        self.mqtt_client.subscribe(f"/{self._rid}/JobScheduler/pause/request")
-        self.mqtt_client.subscribe(f"/{self._rid}/JobScheduler/resume/request")
+        self.mqtt_client.subscribe("/%s/JobScheduler/result/response"%self._rid)
+        self.mqtt_client.subscribe("/%s/JobScheduler/goal/request"%self._rid)    
+        self.mqtt_client.subscribe("/%s/JobScheduler/cancel/request"%self._rid)
+        self.mqtt_client.subscribe("/%s/JobScheduler/pause/request"%self._rid)
+        self.mqtt_client.subscribe("/%s/JobScheduler/resume/request"%self._rid)
 
     def on_message(self, client, userdata, msg):
         mqtt_topic = msg.topic
-        mqtt_message = msg.payload.decode("utf-8")
+        mqtt_message = eval(msg.payload.decode("utf-8"))
+        print("mqtt received : %s, %s"%(mqtt_message, type(mqtt_message)))
         
-        if mqtt_topic == f"/{self._rid}/JobScheduler/result/response":
+        if mqtt_topic == "/%s/JobScheduler/result/response"%self._rid:
             self.job_result_from_broker = mqtt_message
             self.job_result_flag = True
             pass
 
-        elif mqtt_topic == f"/{self._rid}/JobScheduler/goal/request":
-            rospy.loginfo(f"Received JOB GOAL request from MQTT!!")
+        elif mqtt_topic == "/%s/JobScheduler/goal/request"%self._rid:
+            rospy.loginfo("Received JOB GOAL request from MQTT!!")
             rospy.wait_for_service("%s/JobScheduler/goal"%self._rid)
             self.job_goal_cnt = rospy.ServiceProxy("%s/JobScheduler/goal"%self._rid, JobGoal)
-            ros_message = message_converter.convert_dictionary_to_ros_message("cai_msgs/JobGoal", json.loads(mqtt_message), kind="request", strict_mode="True")
+            ros_message = message_converter.convert_dictionary_to_ros_message("cai_msgs/JobGoal", mqtt_message, kind="request", strict_mode="True")
             res = self.job_goal_cnt(ros_message)
             data = json_message_converter.convert_ros_message_to_json(res)
-            self.mqtt_client.publish(f"/{self._rid}/JobScheduler/goal/response", data)
-            rospy.loginfo(f"Sent JOB GOAL response to MQTT")
+            self.mqtt_client.publish("/%s/JobScheduler/goal/response"%self._rid, data)
+            rospy.loginfo("Sent JOB GOAL response to MQTT")
             pass
 
-        elif mqtt_topic == f"/{self._rid}/JobScheduler/cancel/request":
-            rospy.loginfo(f"Received JOB CANCEL request from MQTT!!")
+        elif mqtt_topic == "/%s/JobScheduler/cancel/request"%self._rid:
+            rospy.loginfo("Received JOB CANCEL request from MQTT!!")
             rospy.wait_for_service("%s/JobScheduler/cancel"%self._rid)
             self.job_cancel_cnt = rospy.ServiceProxy("%s/JobScheduler/cancel"%self._rid, JobCancel)
-            ros_message = message_converter.convert_dictionary_to_ros_message("cai_msgs/JobCancel", json.loads(mqtt_message), kind="request", strict_mode="True")
+            ros_message = message_converter.convert_dictionary_to_ros_message("cai_msgs/JobCancel", mqtt_message, kind="request", strict_mode="True")
             res = self.job_cancel_cnt(ros_message)
             data = json_message_converter.convert_ros_message_to_json(res)
-            self.mqtt_client.publish(f"/{self._rid}/JobScheduler/cancel/response", data)
-            rospy.loginfo(f"Sent JOB CANCEL response to MQTT!!")
+            self.mqtt_client.publish("/%s/JobScheduler/cancel/response"%self._rid, data)
+            rospy.loginfo("Sent JOB CANCEL response to MQTT!!")
             pass
 
-        elif mqtt_topic == f"/{self._rid}/JobScheduler/pause/request":
-            rospy.loginfo(f"Received JOB PAUSE request from MQTT!!")
+        elif mqtt_topic == "/%s/JobScheduler/pause/request"%self._rid:
+            rospy.loginfo("Received JOB PAUSE request from MQTT!!")
             rospy.wait_for_service("%s/JobScheduler/pause"%self._rid)
             self.job_pause_cnt = rospy.ServiceProxy("%s/JobScheduler/pause"%self._rid, JobPause)
-            ros_message = message_converter.convert_dictionary_to_ros_message("cai_msgs/JobPause", json.loads(mqtt_message), kind="request", strict_mode="True")
+            ros_message = message_converter.convert_dictionary_to_ros_message("cai_msgs/JobPause", mqtt_message, kind="request", strict_mode="True")
             res = self.job_pause_cnt(ros_message)
             data = json_message_converter.convert_ros_message_to_json(res)
-            self.mqtt_client.publish(f"/{self._rid}/JobScheduler/pause/response", data)
-            rospy.loginfo(f"Sent JOB PAUSE response to MQTT!!")
+            self.mqtt_client.publish("/%s/JobScheduler/pause/response"%self._rid, data)
+            rospy.loginfo("Sent JOB PAUSE response to MQTT!!")
             pass
 
-        elif mqtt_topic == f"/{self._rid}/JobScheduler/resume/request":
-            rospy.loginfo(f"Received JOB RESUME request from MQTT!!")
+        elif mqtt_topic == "/%s/JobScheduler/resume/request"%self._rid:
+            rospy.loginfo("Received JOB RESUME request from MQTT!!")
             rospy.wait_for_service("%s/JobScheduler/resume"%self._rid)
             self.job_resume_cnt = rospy.ServiceProxy("%s/JobScheduler/resume"%self._rid, JobResume)
-            ros_message = message_converter.convert_dictionary_to_ros_message("cai_msgs/JobResume", json.loads(mqtt_message), kind="request", strict_mode="True")
+            ros_message = message_converter.convert_dictionary_to_ros_message("cai_msgs/JobResume", mqtt_message, kind="request", strict_mode="True")
             res = self.job_resume_cnt(ros_message)
             data = json_message_converter.convert_ros_message_to_json(res)
-            self.mqtt_client.publish(f"/{self._rid}/JobScheduler/resume/response", data)
-            rospy.loginfo(f"Sent JOB RESUME response to MQTT!!")
+            self.mqtt_client.publish("/%s/JobScheduler/resume/response"%self._rid, data)
+            rospy.loginfo("Sent JOB RESUME response to MQTT!!")
             pass
 
     def robotstate_cb(self, msg):
         data = json_message_converter.convert_ros_message_to_json(msg)
-        self.mqtt_client.publish(f"/{self._rid}/robot_state", data)
-        rospy.loginfo(f"Published ROBOT STATE to MQTT!!")
+        self.mqtt_client.publish("/%s/robot_state"%self._rid, data)
+        # rospy.loginfo("Published ROBOT STATE to MQTT!!")
 
     def job_feedback_cb(self, msg):
         data = json_message_converter.convert_ros_message_to_json(msg)
-        self.mqtt_client.publish(f"/{self._rid}/JobScheduler/feedback", data)
-        rospy.loginfo(f"Published JOB FEEDBACK to MQTT!!")
+        self.mqtt_client.publish("/%s/JobScheduler/feedback"%self._rid, data)
+        # rospy.loginfo("Published JOB FEEDBACK to MQTT!!")
 
     def job_result_cb(self, msg):
         data = json_message_converter.convert_ros_message_to_json(msg)
-        self.mqtt_client.publish(f"/{self._rid}/JobScheduler/result/request", data)
-        rospy.loginfo(f"Called JOB RESULT request to MQTT!!")
+        self.mqtt_client.publish("/%s/JobScheduler/result/request"%self._rid, data)
+        rospy.loginfo("Called JOB RESULT request to MQTT!!")
 
         ## wait for subscribe job result response
         timecount = time.time()
@@ -116,8 +118,8 @@ class RosMqttBridge:
             rospy.sleep(0.1)
 
         if self.job_result_flag == True:
-            res = message_converter.convert_dictionary_to_ros_message("cai_msgs/JobResult", json.loads(self.job_result_from_broker), kind="response", strict_mode="True")
-            rospy.loginfo(f"Received JOB RESULT response from MQTT!!")
+            res = message_converter.convert_dictionary_to_ros_message("cai_msgs/JobResult", self.job_result_from_broker, kind="response", strict_mode="True")
+            rospy.loginfo("Received JOB RESULT response from MQTT!!")
             self.job_result_flag = False
             return res
 
@@ -128,14 +130,15 @@ class RosMqttBridge:
         self.mqtt_client.connect(self.mqtt_broker, self.mqtt_port, 60)
         self.mqtt_client.loop_start()
 
-        while not self.mqtt_client.is_connected():
+        while not self.mqtt_client.is_connected() or not rospy.is_shutdown():
             time.sleep(1)
 
         ros_thread = threading.Thread(target=rospy.spin)
         ros_thread.start()
 
 if __name__ == '__main__':
-    mqtt_broker = "192.168.0.169"
+    # mqtt_broker = "localhost"
+    mqtt_broker = "118.220.65.11"
     mqtt_port = 1883
     
     bridge = RosMqttBridge(mqtt_broker, mqtt_port)
